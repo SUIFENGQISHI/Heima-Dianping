@@ -52,8 +52,12 @@ Thumbs.db
 
 ### Configuration Files (contains sensitive info) ###
 # 如果配置文件包含敏感信息（密码、密钥等），取消下面的注释
-# application-prod.yml
-# application-dev.yml
+application.yml
+application.yaml
+application-prod.yml
+application-dev.yml
+application-test.yml
+*.properties
 
 ### Backup Files ###
 *~
