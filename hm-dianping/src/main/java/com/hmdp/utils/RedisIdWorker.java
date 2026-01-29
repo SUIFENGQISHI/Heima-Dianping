@@ -29,13 +29,9 @@ public class RedisIdWorker {
         //生成序列号
         //获取当天日期，精确到天
         String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
-
         //自增长
-
         long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + ":" + date);
-
         //拼接并返回
-
         return nowTimestamp << COUNT_BITS | count;
     }
 

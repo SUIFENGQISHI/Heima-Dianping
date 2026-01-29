@@ -27,9 +27,10 @@ class HmDianPingApplicationTests {
 
     @Test
     void testSaveShop() throws InterruptedException {
-        Long id = 1L;
-        Shop shop = shopService.getById(id);
-        cacheClient.setWithLogicalExpire(RedisConstants.CACHE_SHOP_KEY + id, shop, 10L, TimeUnit.SECONDS);
+        for(int i=1;i<=5;i++){
+            Shop shop = shopService.getById(i);
+            cacheClient.setWithLogicalExpire(RedisConstants.CACHE_SHOP_KEY + i, shop, 10L, TimeUnit.SECONDS);
+        }
     }
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(500);
