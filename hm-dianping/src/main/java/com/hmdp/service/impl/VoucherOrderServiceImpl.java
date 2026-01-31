@@ -7,6 +7,8 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.UserHolder;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +32,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private RedisIdWorker redisIdWorker;
 
 
-    @Transactional
+
     @Override
     public long seckillVoucher(Long voucherId) {
         //查询优惠券
@@ -47,7 +49,29 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (voucher.getStock() < 1) {
             throw new RuntimeException("库存不足");
         }
-        //库存充足，扣除库存并创建订单
+
+        //库存充足，下单
+        Long userId = UserHolder.getUser().getId();
+        synchronized (userId.toString().intern()) {
+            //获取代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createOrder(voucherId);
+        }
+    }
+
+    @Transactional
+    public long createOrder(Long voucherId) {
+        Long userId = UserHolder.getUser().getId();
+
+        int count = query().eq("user_id", userId)
+                .eq("voucher_id", voucherId)
+                .count();
+
+        //该用户已购买过该优惠券，抛出异常
+        if (count > 0) {
+            throw new RuntimeException("您已购买过该优惠券，请勿重复购买");
+        }
+        //扣除库存并创建订单
         boolean success = seckillVoucherService.update()
                 .setSql("stock=stock-1")
                 .eq("voucher_id", voucherId)
@@ -59,12 +83,15 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         long orderId = redisIdWorker.nextId("order");
         VoucherOrder voucherOrder = VoucherOrder.builder()
                 .id(orderId)
-                .userId(1L)
+                .userId(userId)
                 .voucherId(voucherId)
                 .payType(1)
                 .status(1)
                 .build();
         save(voucherOrder);
         return orderId;
+
     }
+
+
 }
