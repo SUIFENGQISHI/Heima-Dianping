@@ -1,10 +1,13 @@
 package com.hmdp.utils;
 
 import cn.hutool.core.lang.UUID;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 public class SimpleRedisLock implements ILock {
@@ -12,6 +15,13 @@ public class SimpleRedisLock implements ILock {
     private final String name;
     private static final String lock_prefix = "lock:";
     private final static String ID_PREFIX = UUID.randomUUID().toString(true) + "-";
+    private final static DefaultRedisScript<Integer> UNLOCK_SCPIPT;
+
+    static {
+        UNLOCK_SCPIPT = new DefaultRedisScript<>();
+        UNLOCK_SCPIPT.setLocation(new ClassPathResource("unlock.lua"));
+        UNLOCK_SCPIPT.setResultType(Integer.class);
+    }
 
     public SimpleRedisLock(StringRedisTemplate stringRedisTemplate, String name) {
         this.name = name;
@@ -35,11 +45,14 @@ public class SimpleRedisLock implements ILock {
         String key = lock_prefix + name;
         String threadId = String.valueOf(Thread.currentThread().getId());
         String value = ID_PREFIX + threadId;
-        String currentValue = stringRedisTemplate.opsForValue().get(key);
-        //判断标识是否一致
-        if (value.equals(currentValue)) {
-            stringRedisTemplate.delete(key);
-        }
+        stringRedisTemplate.execute(UNLOCK_SCPIPT, Collections.singletonList(key), value);
+//        //判断标识是否一致
+//        if (value.equals(currentValue)) {
+//            stringRedisTemplate.delete(key);
+//        }
+
+        //调用lua脚本
+
 
     }
 }
