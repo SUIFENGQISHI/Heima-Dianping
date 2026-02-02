@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IVoucherOrderService extends IService<VoucherOrder> {
 
-    long seckillVoucher(Long voucherId);
+    long seckillVoucher(Long voucherId) throws InterruptedException;
 
     long createOrder(Long voucherId);
 }

@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -35,11 +38,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedisIdWorker redisIdWorker;
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private RedissonClient redissonClient;
 
 
     @Override
-    public long seckillVoucher(Long voucherId) {
+    public long seckillVoucher(Long voucherId) throws InterruptedException {
         //查询优惠券
         SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
         //判断秒杀是否开始,未开始，返回错误信息
@@ -57,9 +60,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
         //库存充足，下单
         Long userId = UserHolder.getUser().getId();
-        String key = "order:" + userId + ":" + voucherId;
-        SimpleRedisLock simpleRedisLock = new SimpleRedisLock(stringRedisTemplate, key);
-        boolean isLock = simpleRedisLock.trylock(1200);
+        String key = "lock:" + "order:" + userId + ":" + voucherId;
+        //获取锁
+        RLock lock = redissonClient.getLock(key);
+        boolean isLock = lock.tryLock(1L, TimeUnit.SECONDS);
         if (!isLock) {
             throw new RuntimeException("服务器异常");
         }
@@ -68,7 +72,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
             return proxy.createOrder(voucherId);
         } finally {
-            simpleRedisLock.unlock();
+            lock.unlock();
         }
     }
 
