@@ -73,7 +73,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             save(user);
         }
         //保存用户信息到redis中
-        session.setAttribute("user", user);
+        // session.setAttribute("user", user);  // 已使用Redis存储用户信息，不再需要session
         String token = UUID.randomUUID().toString(true);
         UserDTO userDTO = new UserDTO();
         BeanUtil.copyProperties(user, userDTO);
