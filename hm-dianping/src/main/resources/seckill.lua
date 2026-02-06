@@ -1,8 +1,8 @@
 --1.参数列表
 --1.1. 优惠券ID
-local voucherID = ARG[1]
+local voucherID = ARGV[1]
 --1.2用户ID
-local userID = ARG[2]
+local userID = ARGV[2]
 
 
 --2.数据key

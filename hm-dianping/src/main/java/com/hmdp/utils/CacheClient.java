@@ -24,8 +24,6 @@ public class CacheClient {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private ShopServiceImpl resultService;
 
     public void setWithTime(String key, Object value, Long time, TimeUnit timeUnit) {
         stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), time, timeUnit);

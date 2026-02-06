@@ -7,6 +7,7 @@ import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
 import java.util.concurrent.CountDownLatch;
@@ -23,11 +24,13 @@ class HmDianPingApplicationTests {
     private CacheClient cacheClient;
     @Resource
     private RedisIdWorker redisIdWorker;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
 
     @Test
     void testSaveShop() throws InterruptedException {
-        for(int i=1;i<=5;i++){
+        for (int i = 1; i <= 5; i++) {
             Shop shop = shopService.getById(i);
             cacheClient.setWithLogicalExpire(RedisConstants.CACHE_SHOP_KEY + i, shop, 10L, TimeUnit.SECONDS);
         }
@@ -54,5 +57,9 @@ class HmDianPingApplicationTests {
         System.out.println("time: " + (end - begin));
     }
 
+    @Test
+    void testVoucherRedis() {
+        stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_STOCK_KEY + "11", "200");
+    }
 
 }
